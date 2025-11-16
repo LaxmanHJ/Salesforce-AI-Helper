@@ -130,6 +130,14 @@ function showHelperModal() {
             window.open('/lightning/setup/SetupOneHome/home', '_blank');
           });
         }
+
+        // Wire Dev Console button in the injected modal to open the SF Developer Console
+        const devConsoleBtn = modal.querySelector('#openDevConsole');
+        if (devConsoleBtn) {
+          devConsoleBtn.addEventListener('click', function() {
+            openDevConsole();
+          });
+        }
         
         // Close on outside click
         modal.addEventListener('click', function(e) {
@@ -196,6 +204,18 @@ function extractRecordId(url) {
   // Match 15 or 18 character Salesforce IDs
   const match = url.match(/\/([a-zA-Z0-9]{15,18})\//);
   return match ? match[1] : null;
+}
+
+// Open Salesforce Developer Console in a new tab
+function openDevConsole() {
+  try {
+    const baseUrl = window.location.origin;
+    // ApexCSIPage is a common entry for the developer console
+    const devConsoleUrl = `${baseUrl}/_ui/common/apex/debug/ApexCSIPage`;
+    window.open(devConsoleUrl, '_blank');
+  } catch (e) {
+    console.error('Failed to open Dev Console:', e);
+  }
 }
 
 // Extract Org ID from cookies or page

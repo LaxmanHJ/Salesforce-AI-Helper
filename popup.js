@@ -1,4 +1,5 @@
 document.getElementById('openCurrent').addEventListener('click', async () => {
+  console.log('Open Current Record clicked');
   const [tab] = await chrome.tabs.query({active: true, currentWindow: true});
   chrome.scripting.executeScript({
     target: {tabId: tab.id},
@@ -11,12 +12,14 @@ document.getElementById('openCurrent').addEventListener('click', async () => {
 });
 
 document.getElementById('openSetup').addEventListener('click', async () => {
+  console.log('Open Setup clicked');
   const [tab] = await chrome.tabs.query({active: true, currentWindow: true});
   const baseUrl = new URL(tab.url).origin;
   chrome.tabs.create({url: `${baseUrl}/lightning/setup/SetupOneHome/home`});
 });
 
 document.getElementById('openDevConsole').addEventListener('click', async () => {
+  console.log('Open Developer Console clicked');
   const [tab] = await chrome.tabs.query({active: true, currentWindow: true});
   const baseUrl = new URL(tab.url).origin;
   chrome.tabs.create({url: `${baseUrl}/_ui/common/apex/debug/ApexCSIPage`});
