@@ -72,27 +72,24 @@ async function loadReact() {
   }
 }
 
-// Helper to get Session ID from cookies
-function getSessionId() {
-  const match = document.cookie.match(/(^|;\s*)sid=([^;]*)/);
-  return match ? match[2] : null;
-}
-
-// Fetch User Info from Salesforce API
-async function fetchUserInfo(sessionId) {
-  try {
-    const response = await fetch('/services/oauth2/userinfo', {
-      headers: {
-        'Authorization': `Bearer ${sessionId}`,
-        'Accept': 'application/json'
+// Fetch User Info via Background Service
+async function fetchUserInfo() {
+  return new Promise((resolve, reject) => {
+    chrome.runtime.sendMessage({
+      action: 'FETCH_USER_INFO',
+      instanceUrl: window.location.href
+    }, (response) => {
+      if (chrome.runtime.lastError) {
+        console.error('Runtime error:', chrome.runtime.lastError);
+        resolve(null); // Resolve null to avoid breaking the flow
+      } else if (response && response.error) {
+        console.error('UserInfo error:', response.error);
+        resolve(null);
+      } else {
+        resolve(response);
       }
     });
-    if (!response.ok) throw new Error('API call failed');
-    return await response.json();
-  } catch (e) {
-    console.error('Failed to fetch user info:', e);
-    return null;
-  }
+  });
 }
 
 // Function to show a modal with helpful information (React Version)
@@ -128,30 +125,29 @@ async function showHelperModal() {
       modalContainer.remove();
     };
 
-    // Initial render with loading state
-    root.render(h`<${Modal} 
-      url=${url} 
-      recordId=${recordId} 
-      loading=${true}
-      onClose=${handleClose} 
-    />`);
-
-    // Fetch data
-    const sessionId = getSessionId();
+    // State
     let userInfo = null;
 
-    if (sessionId) {
-      userInfo = await fetchUserInfo(sessionId);
-    }
+    // Function to render the modal with current state
+    const renderModal = (loadingState = true) => {
+      root.render(h`<${Modal} 
+        url=${url} 
+        recordId=${recordId} 
+        userInfo=${userInfo}
+        loading=${loadingState}
+        onClose=${handleClose} 
+      />`);
+    };
 
-    // Re-render with data
-    root.render(h`<${Modal} 
-      url=${url} 
-      recordId=${recordId}
-      userInfo=${userInfo}
-      loading=${false}
-      onClose=${handleClose} 
-    />`);
+    // Initial render with loading state
+    renderModal(true);
+
+    // Fetch Data via background
+    fetchUserInfo().then(info => {
+      userInfo = info;
+      // Re-render with data
+      renderModal(false);
+    });
 
   } catch (e) {
     console.error('Error showing modal:', e);
@@ -171,7 +167,7 @@ function openDevConsole() {
   try {
     const baseUrl = window.location.origin;
     // ApexCSIPage is a common entry for the developer console
-    const devConsoleUrl = `${baseUrl}/_ui/common/apex/debug/ApexCSIPage`;
+    const devConsoleUrl = `${baseUrl} / _ui / common / apex / debug / ApexCSIPage`;
     window.open(devConsoleUrl, '_blank');
   } catch (e) {
     console.error('Failed to open Dev Console:', e);

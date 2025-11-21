@@ -6,8 +6,12 @@
   "permissions": [
     "activeTab",
     "storage",
-    "scripting"
+    "scripting",
+    "cookies"
   ],
+  "background": {
+    "service_worker": "src/background/serviceWorker.js"
+  },
   "host_permissions": [
     "https://*.salesforce.com/*",
     "https://*.salesforce-setup.com/*",
@@ -75,7 +79,11 @@
         "lib/react.development.js",
         "lib/react-dom.development.js",
         "lib/htm.js",
-        "src/content/Modal.js"
+        "src/config.js",
+        "src/services/llmService.js",
+        "src/services/salesforceService.js",
+        "src/content/Modal.js",
+        "src/content/ChatBox.js"
       ],
       "matches": [
         "https://*.salesforce.com/*",

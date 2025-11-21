@@ -1,9 +1,10 @@
 import htm from '../../lib/htm.js';
+import { ChatBox } from './ChatBox.js';
 
 // Bind htm to React.createElement (assumes React is globally available or passed in)
 const h = htm.bind(window.React.createElement);
 
-export function Modal({ url, recordId, userInfo, loading, onClose }) {
+export function Modal({ url, recordId, userInfo, sessionId, loading, onClose }) {
   const handleCopy = () => {
     navigator.clipboard.writeText(recordId);
     alert('Record ID copied to clipboard!');
@@ -75,6 +76,8 @@ export function Modal({ url, recordId, userInfo, loading, onClose }) {
           
           <hr style=${{ border: '0', borderTop: '1px solid #eee', margin: '15px 0' }}/>
           <p><em>This modal is now powered by React!</em></p>
+          
+          <${ChatBox} recordId=${recordId} sessionId=${sessionId} userInfo=${userInfo} />
         </div>
 
         <div className="sf-helper-actions" style=${{ display: 'flex', gap: '10px', justifyContent: 'flex-end' }}>
