@@ -32,9 +32,7 @@ function App() {
 
   return h`
     <div style=${{ padding: '16px', fontFamily: 'sans-serif', minWidth: '250px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
-      <div style=${{ backgroundColor: '#d4edda', color: '#155724', padding: '10px', borderRadius: '4px', textAlign: 'center', marginBottom: '10px', border: '1px solid #c3e6cb' }}>
-        <strong>✅ React Mode Active</strong>
-      </div>
+
       <div style=${{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '10px' }}>
         <img src="../../icons/icon48.png" alt="Logo" style=${{ width: '32px', height: '32px' }} />
         <h2 style=${{ margin: 0, fontSize: '18px' }}>Salesforce Helper 1.0.0</h2>

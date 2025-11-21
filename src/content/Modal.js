@@ -3,7 +3,7 @@ import htm from '../../lib/htm.js';
 // Bind htm to React.createElement (assumes React is globally available or passed in)
 const h = htm.bind(window.React.createElement);
 
-export function Modal({ url, recordId, orgId, userName, onClose }) {
+export function Modal({ url, recordId, userInfo, loading, onClose }) {
   const handleCopy = () => {
     navigator.clipboard.writeText(recordId);
     alert('Record ID copied to clipboard!');
@@ -65,11 +65,13 @@ export function Modal({ url, recordId, orgId, userName, onClose }) {
             <p><strong>Record ID:</strong><br/>${recordId}</p>
           `}
           
-          ${orgId && h`
-            <p><strong>Org ID:</strong><br/>${orgId}</p>
+          ${loading ? h`
+            <p><em>Loading Salesforce Data...</em></p>
+          ` : h`
+            <p><strong>Org ID:</strong><br/>${userInfo ? userInfo.organization_id : 'Unknown'}</p>
+            <p><strong>User:</strong><br/>${userInfo ? userInfo.preferred_username : 'Unknown'}</p>
+            ${userInfo && h`<p style=${{ fontSize: '0.9em', color: '#666' }}>(${userInfo.user_id})</p>`}
           `}
-          
-          <p><strong>User:</strong><br/>${userName}</p>
           
           <hr style=${{ border: '0', borderTop: '1px solid #eee', margin: '15px 0' }}/>
           <p><em>This modal is now powered by React!</em></p>

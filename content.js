@@ -72,6 +72,29 @@ async function loadReact() {
   }
 }
 
+// Helper to get Session ID from cookies
+function getSessionId() {
+  const match = document.cookie.match(/(^|;\s*)sid=([^;]*)/);
+  return match ? match[2] : null;
+}
+
+// Fetch User Info from Salesforce API
+async function fetchUserInfo(sessionId) {
+  try {
+    const response = await fetch('/services/oauth2/userinfo', {
+      headers: {
+        'Authorization': `Bearer ${sessionId}`,
+        'Accept': 'application/json'
+      }
+    });
+    if (!response.ok) throw new Error('API call failed');
+    return await response.json();
+  } catch (e) {
+    console.error('Failed to fetch user info:', e);
+    return null;
+  }
+}
+
 // Function to show a modal with helpful information (React Version)
 async function showHelperModal() {
   try {
@@ -88,8 +111,6 @@ async function showHelperModal() {
     // Get current URL information
     const url = window.location.href;
     const recordId = extractRecordId(url);
-    const orgId = extractOrgId();
-    const userName = getUserName();
 
     // Create or get modal container
     let modalContainer = document.getElementById('sf-helper-react-root');
@@ -107,11 +128,28 @@ async function showHelperModal() {
       modalContainer.remove();
     };
 
+    // Initial render with loading state
     root.render(h`<${Modal} 
       url=${url} 
       recordId=${recordId} 
-      orgId=${orgId} 
-      userName=${userName} 
+      loading=${true}
+      onClose=${handleClose} 
+    />`);
+
+    // Fetch data
+    const sessionId = getSessionId();
+    let userInfo = null;
+
+    if (sessionId) {
+      userInfo = await fetchUserInfo(sessionId);
+    }
+
+    // Re-render with data
+    root.render(h`<${Modal} 
+      url=${url} 
+      recordId=${recordId}
+      userInfo=${userInfo}
+      loading=${false}
       onClose=${handleClose} 
     />`);
 
@@ -140,32 +178,7 @@ function openDevConsole() {
   }
 }
 
-// Extract Org ID from cookies or page
-function extractOrgId() {
-  try {
-    // Try to get from page context
-    const orgIdElement = document.querySelector('[data-org-id]');
-    if (orgIdElement) return orgIdElement.dataset.orgId;
 
-    // Fallback: extract from URL subdomain
-    const match = window.location.hostname.match(/([a-zA-Z0-9-]+)\..*salesforce\.com/);
-    return match ? match[1] : 'Unknown';
-  } catch (e) {
-    return 'Unknown';
-  }
-}
-
-// Get current user name
-function getUserName() {
-  try {
-    const userElement = document.querySelector('.profile-name') ||
-      document.querySelector('[title*="User"]') ||
-      document.querySelector('.uiImage[alt]');
-    return userElement ? (userElement.textContent || userElement.alt || 'Current User') : 'Current User';
-  } catch (e) {
-    return 'Current User';
-  }
-}
 
 // Observe URL changes in Salesforce (SPA navigation)
 function observeUrlChanges() {
