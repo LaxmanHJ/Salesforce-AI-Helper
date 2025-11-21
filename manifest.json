@@ -26,7 +26,7 @@
   ],
   "content_scripts": [
     {
-     "matches": [
+      "matches": [
         "https://*.salesforce.com/*",
         "https://*.salesforce-setup.com/*",
         "https://*.visual.force.com/*",
@@ -47,13 +47,17 @@
         "https://*.force.com/*",
         "https://*.builder.salesforce-experience.com/*"
       ],
-      "js": ["content.js"],
-      "css": ["styles.css"],
+      "js": [
+        "content.js"
+      ],
+      "css": [
+        "styles.css"
+      ],
       "run_at": "document_end"
     }
   ],
   "action": {
-    "default_popup": "popup.html",
+    "default_popup": "src/popup/index.html",
     "default_icon": {
       "16": "icons/icon16.png",
       "48": "icons/icon48.png",
@@ -68,7 +72,10 @@
   "web_accessible_resources": [
     {
       "resources": [
-        "popup.html"
+        "lib/react.development.js",
+        "lib/react-dom.development.js",
+        "lib/htm.js",
+        "src/content/Modal.js"
       ],
       "matches": [
         "https://*.salesforce.com/*",

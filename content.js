@@ -1,11 +1,11 @@
 
 // Wait for page to fully load
-window.addEventListener('load', function() {
+window.addEventListener('load', function () {
   console.log('Salesforce Helper Extension Loaded!');
-  
+
   // Add a custom button to Salesforce
   addCustomButton();
-  
+
   // Listen for URL changes (Salesforce is a single-page app)
   observeUrlChanges();
 });
@@ -14,7 +14,7 @@ window.addEventListener('load', function() {
 function addCustomButton() {
   // Check if button already exists
   if (document.getElementById('sf-helper-btn')) return;
-  
+
   // Create the button
   const button = document.createElement('button');
   button.id = 'sf-helper-btn';
@@ -47,7 +47,7 @@ function addCustomButton() {
   }
 
   // Add click handler (unchanged behavior)
-  button.addEventListener('click', function() {
+  button.addEventListener('click', function () {
     showHelperModal();
   });
 
@@ -56,147 +56,69 @@ function addCustomButton() {
   document.body.appendChild(button);
 }
 
-// Function to show a modal with helpful information
-function showHelperModal() {
-  // Get current URL information
-  const url = window.location.href;
-  const recordId = extractRecordId(url);
-  const orgId = extractOrgId();
-  const userName = getUserName();
-  
-  // Create modal container
-  const modal = document.createElement('div');
-  modal.id = 'sf-helper-modal';
-  modal.className = 'sf-helper-modal';
-  
-  // Fetch popup.html and extract the modal template
-  const extensionUrl = typeof chrome !== 'undefined' && chrome.runtime && chrome.runtime.getURL
-    ? chrome.runtime.getURL('popup.html')
-    : 'popup.html';
-  
-  fetch(extensionUrl)
-    .then(response => response.text())
-    .then(html => {
-      // Parse the HTML to extract the template
-      const parser = new DOMParser();
-      const doc = parser.parseFromString(html, 'text/html');
-      const template = doc.querySelector('#sf-helper-modal-template');
-      
-      if (template) {
-        // Clone the template content
-        const modalContent = template.content.cloneNode(true);
-        modal.appendChild(modalContent);
-        
-        // Populate dynamic data
-        const urlElement = modal.querySelector('#modal-url');
-        const recordIdElement = modal.querySelector('#modal-record-id');
-        const recordIdContainer = modal.querySelector('#modal-record-id-container');
-        const orgIdElement = modal.querySelector('#modal-org-id');
-        const orgIdContainer = modal.querySelector('#modal-org-id-container');
-        const userElement = modal.querySelector('#modal-user');
-        const copyBtn = modal.querySelector('#copy-record-id');
-        
-        // Set values
-        if (urlElement) urlElement.textContent = url;
-        if (recordIdElement && recordId) {
-          recordIdElement.textContent = recordId;
-          recordIdContainer.style.display = 'block';
-        }
-        if (orgIdElement && orgId) {
-          orgIdElement.textContent = orgId;
-          orgIdContainer.style.display = 'block';
-        }
-        if (userElement) userElement.textContent = userName;
-        if (copyBtn && !recordId) copyBtn.disabled = true;
-        
-        // Add event listeners
-        const closeBtn = modal.querySelector('.sf-helper-close');
-        if (closeBtn) {
-          closeBtn.addEventListener('click', function() {
-            modal.remove();
-          });
-        }
-        
-        if (recordId && copyBtn) {
-          copyBtn.addEventListener('click', function() {
-            navigator.clipboard.writeText(recordId);
-            alert('Record ID copied to clipboard!');
-          });
-        }
-        
-        const setupBtn = modal.querySelector('#open-setup');
-        if (setupBtn) {
-          setupBtn.addEventListener('click', function() {
-            window.open('/lightning/setup/SetupOneHome/home', '_blank');
-          });
-        }
+// Load React and ReactDOM if not already loaded
+async function loadReact() {
+  if (window.React && window.ReactDOM) return;
 
-        // Wire Dev Console button in the injected modal to open the SF Developer Console
-        const devConsoleBtn = modal.querySelector('#openDevConsole');
-        if (devConsoleBtn) {
-          devConsoleBtn.addEventListener('click', function() {
-            openDevConsole();
-          });
-        }
-        
-        // Close on outside click
-        modal.addEventListener('click', function(e) {
-          if (e.target === modal) {
-            modal.remove();
-          }
-        });
-      }
-      
-      document.body.appendChild(modal);
-    })
-    .catch(error => {
-      console.error('Failed to load popup.html:', error);
-      // Fallback: use inline HTML if fetch fails
-      modal.innerHTML = `
-        <div class="sf-helper-modal-content">
-          <span class="sf-helper-close">&times;</span>
-          <h2>Salesforce Quick Helper</h2>
-          <div class="sf-helper-info">
-            <p><strong>Current URL:</strong><br>${url}</p>
-            ${recordId ? `<p><strong>Record ID:</strong><br>${recordId}</p>` : ''}
-            ${orgId ? `<p><strong>Org ID:</strong><br>${orgId}</p>` : ''}
-            <p><strong>User:</strong><br>${userName}</p>
-            <hr>
-            <p><em>This is a starter template. Customize it for your needs!</em></p>
-          </div>
-          <div class="sf-helper-actions">
-            <button id="copy-record-id" ${!recordId ? 'disabled' : ''}>
-              Copy Record ID
-            </button>
-            <button id="open-setup">Open Setup</button>
-          </div>
-        </div>
-      `;
-      
-      document.body.appendChild(modal);
-      
-      // Add event listeners for fallback
-      modal.querySelector('.sf-helper-close').addEventListener('click', function() {
-        modal.remove();
-      });
-      
-      if (recordId) {
-        modal.querySelector('#copy-record-id').addEventListener('click', function() {
-          navigator.clipboard.writeText(recordId);
-          alert('Record ID copied to clipboard!');
-        });
-      }
-      
-      modal.querySelector('#open-setup').addEventListener('click', function() {
-        window.open('/lightning/setup/SetupOneHome/home', '_blank');
-      });
-      
-      modal.addEventListener('click', function(e) {
-        if (e.target === modal) {
-          modal.remove();
-        }
-      });
-    });
+  console.log('Loading React...');
+  try {
+    // We use dynamic imports to load the libraries from the extension
+    await import(chrome.runtime.getURL('lib/react.development.js'));
+    await import(chrome.runtime.getURL('lib/react-dom.development.js'));
+    console.log('React loaded!');
+  } catch (e) {
+    console.error('Failed to load React:', e);
+    throw e;
+  }
+}
+
+// Function to show a modal with helpful information (React Version)
+async function showHelperModal() {
+  try {
+    await loadReact();
+
+    // Import the Modal component dynamically
+    const { Modal } = await import(chrome.runtime.getURL('src/content/Modal.js'));
+    const htmModule = await import(chrome.runtime.getURL('lib/htm.js'));
+    const htm = htmModule.default;
+
+    // Bind htm to React
+    const h = htm.bind(window.React.createElement);
+
+    // Get current URL information
+    const url = window.location.href;
+    const recordId = extractRecordId(url);
+    const orgId = extractOrgId();
+    const userName = getUserName();
+
+    // Create or get modal container
+    let modalContainer = document.getElementById('sf-helper-react-root');
+    if (!modalContainer) {
+      modalContainer = document.createElement('div');
+      modalContainer.id = 'sf-helper-react-root';
+      document.body.appendChild(modalContainer);
+    }
+
+    // Mount the React app
+    const root = window.ReactDOM.createRoot(modalContainer);
+
+    const handleClose = () => {
+      root.unmount();
+      modalContainer.remove();
+    };
+
+    root.render(h`<${Modal} 
+      url=${url} 
+      recordId=${recordId} 
+      orgId=${orgId} 
+      userName=${userName} 
+      onClose=${handleClose} 
+    />`);
+
+  } catch (e) {
+    console.error('Error showing modal:', e);
+    alert('Failed to load the helper modal. Please reload the page.');
+  }
 }
 
 // Extract Record ID from URL
@@ -224,7 +146,7 @@ function extractOrgId() {
     // Try to get from page context
     const orgIdElement = document.querySelector('[data-org-id]');
     if (orgIdElement) return orgIdElement.dataset.orgId;
-    
+
     // Fallback: extract from URL subdomain
     const match = window.location.hostname.match(/([a-zA-Z0-9-]+)\..*salesforce\.com/);
     return match ? match[1] : 'Unknown';
@@ -237,8 +159,8 @@ function extractOrgId() {
 function getUserName() {
   try {
     const userElement = document.querySelector('.profile-name') ||
-                       document.querySelector('[title*="User"]') ||
-                       document.querySelector('.uiImage[alt]');
+      document.querySelector('[title*="User"]') ||
+      document.querySelector('.uiImage[alt]');
     return userElement ? (userElement.textContent || userElement.alt || 'Current User') : 'Current User';
   } catch (e) {
     return 'Current User';
@@ -256,5 +178,5 @@ function observeUrlChanges() {
       // Re-add button if needed
       setTimeout(addCustomButton, 1000);
     }
-  }).observe(document, {subtree: true, childList: true});
+  }).observe(document, { subtree: true, childList: true });
 }
