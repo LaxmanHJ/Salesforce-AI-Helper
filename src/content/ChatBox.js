@@ -8,6 +8,7 @@ export function ChatBox({ recordId, sessionId, userInfo }) {
   const [query, setQuery] = React.useState('');
   const [messages, setMessages] = React.useState([]);
   const [loading, setLoading] = React.useState(false);
+  const [viewMode, setViewMode] = React.useState('summary');
 
   // Determine object type from ID prefix
   const getObjectType = (id) => {
@@ -89,10 +90,15 @@ export function ChatBox({ recordId, sessionId, userInfo }) {
 
       const result = await executeSoql(soql, sessionId, instanceUrl);
 
+      // Generate LLM summary
+      const { generateResultSummary } = await import('../services/llmService.js');
+      const summary = await generateResultSummary(textToSend, result.records, soql);
+
       const resultMsg = {
         role: 'assistant',
         text: `Found ${result.totalSize} records.`,
-        data: result.records
+        data: result.records,
+        summary: summary
       };
 
       setMessages(prev => [...prev, resultMsg]);
@@ -175,7 +181,11 @@ export function ChatBox({ recordId, sessionId, userInfo }) {
           padding: '5px',
           border: '1px solid #eee'
         }}>
-                <pre style=${{ fontSize: '11px', margin: 0 }}>${JSON.stringify(msg.data, null, 2)}</pre>
+                ${viewMode === 'json' ? h`
+                  <pre style=${{ fontSize: '11px', margin: 0 }}>${JSON.stringify(msg.data, null, 2)}</pre>
+                ` : h`
+                  <pre style=${{ fontSize: '11px', margin: 0, whiteSpace: 'pre-wrap' }}>${msg.summary || 'Loading summary...'}</pre>
+                `}
               </div>
             `}
           </div>
@@ -215,6 +225,38 @@ export function ChatBox({ recordId, sessionId, userInfo }) {
     }}
         >
           Send
+        </button>
+      </div>
+      
+      <div style=${{ display: 'flex', gap: '8px', marginTop: '8px', alignItems: 'center' }}>
+        <span style=${{ fontSize: '12px', color: '#54698d' }}>View Mode:</span>
+        <button 
+          onClick=${() => setViewMode('summary')}
+          style=${{
+            padding: '4px 12px',
+            fontSize: '12px',
+            backgroundColor: viewMode === 'summary' ? '#0070d2' : '#f3f2f2',
+            color: viewMode === 'summary' ? 'white' : '#0070d2',
+            border: '1px solid #0070d2',
+            borderRadius: '4px',
+            cursor: 'pointer'
+          }}
+        >
+          Summary
+        </button>
+        <button 
+          onClick=${() => setViewMode('json')}
+          style=${{
+            padding: '4px 12px',
+            fontSize: '12px',
+            backgroundColor: viewMode === 'json' ? '#0070d2' : '#f3f2f2',
+            color: viewMode === 'json' ? 'white' : '#0070d2',
+            border: '1px solid #0070d2',
+            borderRadius: '4px',
+            cursor: 'pointer'
+          }}
+        >
+          JSON
         </button>
       </div>
     </div>
